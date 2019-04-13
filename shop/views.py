@@ -1,20 +1,31 @@
-from django.shortcuts import render
+from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from shop.models import Game
 
 # Create your views here.
 
 def index(request):
-    if request.method =="GET":
-        return HttpResponse("Hello World !")
+    if request.method == "GET":
+        return HttpResponse("Hello World!")
 
-def get_games(request):
-    if request.method =="GET":
-        game=Game.objects.all()[0]
-        return HttpResponse(str(game.title) + " $" + str(game.price))
-        
+def signup(request):
+    if request.user.is_authenticated:
+        return redirect("shop:index")
+    return render(request, 'shop/signup.html')
 
-def get_html(request):
-    games=["Pacman","GTA","Hitman"]
-    if request.method =="GET":
-        return render(request,'shop/login.html',{"games":games})
+
+def logout_view(request):
+    logout(request)
+    return redirect("shop:login")
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("shop:index")
+    return render(request, 'shop/login.html')
+
+def login_user(request):
+    pass
+def create(request):
+    pass
