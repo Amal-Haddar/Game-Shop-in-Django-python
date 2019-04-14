@@ -3,6 +3,9 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.contrib.auth.models import User, Group
 from shop.models import Game, Developer, Player,Transaction
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError
 # Create your views here.
 def index(request):
     if request.method == "GET":
@@ -102,16 +105,85 @@ def play_game(request, game_id):
     pass
 
 def developer_view(request):
-    pass
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name="developers").count() != 0:
+            # Statistics for purchased games.
+            # Lets get all games if this dev
+            games = Game.objects.filter(developer=user.developer.id)
+            statistics = []
+            for game in games:
+                transactions = Transaction.objects.filter(game=game.id)
+                for transaction in transactions:
+                    statistics.append(transaction)
+            return render(request, "shop/developer.html", {"statistics": statistics})
+        else:
+            return redirect("shop:index")
+
+
+
 
 def search(request):
     pass
 
-def publish(request):
-    pass
+def publish_page_view(request):
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name="developers").count() != 0:
+            return render(request, "shop/publish_game_form.html")
+        else:
+           return redirect("shop:index")
+
 
 def developer_games(request):
-    pass
+    if request.method == "GET":
+        user = request.user
+        if not user.is_authenticated:
+            return redirect("shop:login")
+        if user.groups.filter(name="developers").count() != 0:
+            games = user.developer.game_set.all()
+            return render(request, "shop/developer_games.html", {"games":games})
+        else:
+           return redirect("shop:index")
+
 
 def edit_game(request, game_id):
     pass
+
+def create_game(request):
+    if request.method == "POST":
+        user = request.user
+        if not user.is_authenticated:
+            return HttpResponse(status=500)
+        if user.groups.filter(name="developers").count() == 0:
+            return HttpResponse(status=500)
+        developer = user.developer
+        title = request.POST["title"]
+        price = request.POST["price"]
+        url = request.POST["url"]
+        if not title and not url and not price:
+            return render(request, "shop/publish_game_form.html", {"error":"Please fill in all required fields"})
+        # Parse price
+        try:
+            float_price = float(price)
+        except ValueError:
+            return render(request, "shop/publish_game_form.html", {"error":"Price is not a number"})
+        if float_price <= 0:
+            return render(request, "shop/publish_game_form.html", {"error":"Price must be more than 0"})
+        # Validate URL
+        try:
+            URLValidator()(url)
+        except ValidationError:
+            return render(request, "shop/publish_game_form.html", {"error":"URL is not valid"})
+        try:
+            Game.objects.create(title=title, price=float_price, url=url, developer=developer)
+        except (ValidationError, IntegrityError) as e:
+            return render(request, "shop/publish_game_form.html", {"error":"URL is not unique"})
+
+        return redirect("shop:developer_games")
+    else:
+        return redirect("shop:signup")
