@@ -12,7 +12,11 @@ urlpatterns = [
     path('logout', views.logout_view, name='logout'),
     path('signup', views.signup, name='signup'),
     path('home', views.home, name='home'),
+    path('payment/success/', views.payment_success, name='payment_success'),
+    path('payment/error', views.payment_error, name='payment_error'),
+    path('payment/cancel', views.payment_cancel, name='payment_cancel'),
     path('catalog', views.catalog_view, name='catalog'),
+    path('games/<int:game_id>/info', views.game_info, name='game_info'),
     path('developer', views.developer_view, name='developer'),
     path('search', views.search, name='search'),
     path('games/<int:game_id>/play', views.play_game, name='play_game'),
@@ -22,6 +26,7 @@ urlpatterns = [
     path('developer/games/<int:game_id>/edit', views.edit_game, name='editgame'),
     path('developer/games/<int:game_id>/update', views.edit_game_update, name='updategame'),
     path('developer/games/<int:game_id>/delete', views.edit_game_delete, name='deletegame'),
+    path('facebook', views.facebook_handler, name='facebook_handler'),
 
 
 ]
